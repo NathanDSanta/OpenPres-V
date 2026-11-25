@@ -3,9 +3,12 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Releases pass their version (-PversionName=0.8.0); a build by hand is 0.1.0.
+// Releases pass their version: -PversionName="0.8.0" (or "0.8.0.2 beta") -PversionCode=80000
+// (X·1000000 + Y·10000 + Z·100 + the beta's number: docs/RELEASING.md). A build by hand is 0.1.0.
 val appVersion = (findProperty("versionName") as String?) ?: "0.1.0"
-val versionParts = appVersion.split(".").map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 } + listOf(0, 0, 0)
+val versionParts = (Regex("""\d+""").findAll(appVersion).map { it.value.toInt() }.toList() + listOf(0, 0, 0, 0)).take(4)
+val appVersionCode = (findProperty("versionCode") as String?)?.toInt()
+    ?: (versionParts[0] * 1_000_000 + versionParts[1] * 10_000 + versionParts[2] * 100 + versionParts[3])
 
 android {
     namespace = "com.nathandsanta.openpres.viewer"
@@ -16,7 +19,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionName = appVersion
-        versionCode = versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]
+        versionCode = appVersionCode
     }
 
     // The release key comes from the repository's secrets (see README); without it the APK is
