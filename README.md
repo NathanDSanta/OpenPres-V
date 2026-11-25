@@ -1,16 +1,16 @@
-# OpenPres for Android
+# OpenPres Viewer (Android)
 
-> This branch (`android/develop`) holds only the Android app. The OpenPres app is on
-> `develop`; each OpenPres release builds the app from the newest `android/develop` and
-> attaches the APK to the release.
+> One of the OpenPres repositories: the server is [OpenPres](https://github.com/NathanDSanta/OpenPres).
+> The viewer app is released here, on its own ([releases](https://github.com/NathanDSanta/OpenPres-V/releases)).
+> For live translation on phones there's the [Translation app](https://github.com/NathanDSanta/OpenPres-T).
 
 A simple viewer for OpenPres: it shows one of the server's screens, as big as it fits, and plays
 one of its audio buses. It can't change anything on the server.
 
 ## Install
 
-Get `OpenPres-X.Y.Z-Android.apk` from the
-[latest release](https://github.com/NathanDSanta/OpenPres/releases/latest) and open it on the
+Get `OpenPres-Viewer-X.Y.Z.apk` from the
+[latest release](https://github.com/NathanDSanta/OpenPres-V/releases/latest) and open it on the
 phone or tablet (Android 7 or newer; allow installing apps from your browser or files app when
 Android asks).
 
@@ -37,7 +37,7 @@ with a throwaway key, and a new version can only be installed after removing the
 
 ### Branches and pull requests
 
-Work on a branch named `android/feature/…`, `android/fix/…`, `android/docs/…`,
-`android/chore/…` or `android/ci/…`, and open the pull request into `android/develop` with a
-title like `feat: …` or `fix: …`. The checks (lint and the unit tests) run on every pull
-request; an APK is built only for releases.
+Work on a branch named `feature/…`, `fix/…`, `docs/…`, `chore/…` or `ci/…`, and open the
+pull request into `develop` with a title like `feat: …` or `fix: …`. The checks (lint and the
+unit tests) run on every pull request; an APK is built only for releases. Betas and stable
+releases: [docs/RELEASING.md](docs/RELEASING.md).
