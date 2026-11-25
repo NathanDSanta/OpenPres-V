@@ -29,7 +29,7 @@ hand with "now".
 
 A beta is named after the stable it builds on: **0.7.0.3 beta** is the third beta since 0.7.0
 (tag `v0.7.0.3-beta`, a pre-release on GitHub). Servers follow betas only when the admin joins
-the beta program (Settings → General); the Manager, the plugin and the apps follow their
+the beta program (Settings → System); the Manager, the plugin and the apps follow their
 server.
 
 ## Stable releases: only when asked
@@ -43,8 +43,8 @@ On Telegram, to the OpenPres bot:
 | `/hotfix 12` | Merges hotfix pull request #12 (a `hotfix/…` branch into `main`), released as X.Y.**Z+1**. Then `main` goes back into `develop` and a beta follows straight away (X.Y.Z+1.1), so the beta program has the fix too. |
 | `/hotfix M 12` | The same in the Manager's repository. |
 
-No pull request into `main` exists until you ask. The bot runs on GitHub's schedule, so it can
-answer some minutes later.
+No pull request into `main` exists until you ask: the bot opens it and merges it, and the push
+to `main` starts the release.
 
 A major release (X+1.0.0) happens only when Nathan asks for one: run the **Release** workflow by
 hand on `main` with "major".
