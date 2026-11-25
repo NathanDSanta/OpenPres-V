@@ -6,33 +6,37 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Looks for a newer app when it opens: every OpenPres release on GitHub has the APK attached.
- * If there is one, the screen in front offers to download it (opening the file installs it).
- * A build by hand (version 0.1.0) doesn't look.
+ * Looks for a newer app when it opens, among this app's releases on GitHub (OpenPres-V): stable
+ * ones, and betas too when the server used last follows the beta program. If there is one, the
+ * screen in front offers to download it (opening the file installs it). A build by hand
+ * (version 0.1.0) doesn't look.
  */
 object Updates {
-    private const val LATEST = "https://api.github.com/repos/NathanDSanta/OpenPres/releases/latest"
+    private const val RELEASES = "https://api.github.com/repos/NathanDSanta/OpenPres-V/releases?per_page=30"
     private const val TEST_BUILD = "0.1.0"
 
-    data class Release(val version: String, val url: String)
+    /** `version` as people see it ("0.8.0.2 beta"), `tag` as on GitHub. */
+    data class Release(val version: String, val url: String, val tag: String = "v$version")
 
     private var started = false
     private var found: Release? = null
     private var offered = false
     private var front: WeakReference<Activity>? = null
 
-    /** Once per run of the app. */
-    fun start() {
+    /** Once per run of the app. `server`: the address used last, to ask about the beta program. */
+    fun start(server: String?) {
         if (started || BuildConfig.VERSION_NAME == TEST_BUILD) return
         started = true
         Thread {
-            val release = runCatching { newer(fetch(), BuildConfig.VERSION_NAME) }.getOrNull()
+            val beta = server != null && runCatching { JSONObject(get("$server/api/health", 3_000)).optBoolean("beta_program") }.getOrDefault(false)
+            val release = runCatching { newer(get(RELEASES, 10_000), BuildConfig.VERSION_NAME, beta) }.getOrNull()
             Handler(Looper.getMainLooper()).post {
                 found = release
                 front?.get()?.let { offer(it) }
@@ -49,27 +53,38 @@ object Updates {
         if (front?.get() === activity) front = null
     }
 
-    /** The newest release's APK, if it's newer than `current`. */
-    fun newer(json: String, current: String): Release? {
-        val release = JSONObject(json)
-        val version = release.optString("tag_name").removePrefix("v")
-        if (!Versions.isNewer(version, current)) return null
-        val assets = release.optJSONArray("assets") ?: return null
-        for (i in 0 until assets.length()) {
-            val asset = assets.getJSONObject(i)
-            if (asset.optString("name").endsWith("-Android.apk")) return Release(version, asset.optString("browser_download_url"))
+    /**
+     * From GitHub's list of releases: the newest one with an APK, if it's newer than `current`.
+     * Betas (pre-releases) count only with `beta`.
+     */
+    fun newer(json: String, current: String, beta: Boolean = false): Release? {
+        val releases = JSONArray(json)
+        var best: Release? = null
+        for (r in 0 until releases.length()) {
+            val release = releases.getJSONObject(r)
+            if (release.optBoolean("draft") || (release.optBoolean("prerelease") && !beta)) continue
+            val tag = release.optString("tag_name")
+            if (!Versions.isNewer(tag, current) || (best != null && !Versions.isNewer(tag, best.tag))) continue
+            val assets = release.optJSONArray("assets") ?: continue
+            for (i in 0 until assets.length()) {
+                val asset = assets.getJSONObject(i)
+                if (asset.optString("name").endsWith(".apk")) {
+                    best = Release(Versions.display(tag), asset.optString("browser_download_url"), tag)
+                    break
+                }
+            }
         }
-        return null
+        return best
     }
 
-    private fun fetch(): String {
-        val connection = URL(LATEST).openConnection() as HttpURLConnection
+    private fun get(url: String, timeout: Int): String {
+        val connection = URL(url).openConnection() as HttpURLConnection
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         connection.setRequestProperty("User-Agent", "openpres-android")
-        connection.connectTimeout = 10_000
-        connection.readTimeout = 10_000
+        connection.connectTimeout = timeout
+        connection.readTimeout = timeout
         try {
-            if (connection.responseCode != 200) throw IllegalStateException("GitHub answered ${connection.responseCode}")
+            if (connection.responseCode != 200) throw IllegalStateException("$url answered ${connection.responseCode}")
             return connection.inputStream.bufferedReader().use { it.readText() }
         } finally {
             connection.disconnect()

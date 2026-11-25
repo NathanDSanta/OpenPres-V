@@ -28,8 +28,8 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Opening the app opens the server used last; Back from it comes here to choose another.
-        Updates.start()
         val last = prefs.getString(LAST_SERVER, null)
+        Updates.start(last)
         if (last != null && savedInstanceState == null) open(last, remember = false)
 
         val content = LinearLayout(this).apply {
